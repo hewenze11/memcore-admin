@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+    branches: [dev, main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure insecure registry
+        run: |
+          sudo mkdir -p /etc/docker
+          echo '{"insecure-registries":["172.236.254.239:30880"]}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+
+      - name: Login to Harbor
+        run: echo "Harbor12345" | docker login 172.236.254.239:30880 -u admin --password-stdin
+
+      - name: Build and push
+        env:
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          TAG="${BRANCH}-${SHA:0:7}"
+          IMAGE="172.236.254.239:30880/memcore-admin/frontend:${TAG}"
+          docker build --build-arg NEXT_PUBLIC_APP_ENV=production -t $IMAGE .
+          docker push $IMAGE
+          echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
+
+      - name: Update k8s manifest
+        env:
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          TAG="${BRANCH}-${SHA:0:7}"
+          IMAGE="172.236.254.239:30880/memcore-admin/frontend:${TAG}"
+          if [ "$BRANCH" = "dev" ]; then
+            sed -i "s|image: .*|image: ${IMAGE}|g" k8s/dev/deployment.yaml
+            git config user.email "ci@memcore.ai"
+            git config user.name "CI Bot"
+            git add k8s/dev/deployment.yaml
+            git commit -m "ci: update dev image to ${TAG} [skip ci]" || echo "No changes"
+            git push
+          elif [ "$BRANCH" = "main" ]; then
+            sed -i "s|image: .*|image: ${IMAGE}|g" k8s/prod/deployment.yaml
+            git config user.email "ci@memcore.ai"
+            git config user.name "CI Bot"
+            git add k8s/prod/deployment.yaml
+            git commit -m "ci: update prod image to ${TAG} [skip ci]" || echo "No changes"
+            git push
+          fi
+
+      - name: Notify Feishu
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          curl -X POST https://open.feishu.cn/open-apis/bot/v2/hook/f5863f4d-4f8f-41e6-8361-ee3a16672099 \
+            -H "Content-Type: application/json" \
+            -d "{\"msg_type\":\"text\",\"content\":{\"text\":\"[memcore-admin] CI ${STATUS}: ${{ github.ref_name }} ${{ github.sha }}\"}}"

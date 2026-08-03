@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memcore-admin
+  namespace: dev-memcore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memcore-admin
+  template:
+    metadata:
+      labels:
+        app: memcore-admin
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      containers:
+        - name: memcore-admin
+          image: 172.236.254.239:30880/memcore-admin/frontend:dev-placeholder
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: HOSTNAME
+              value: "0.0.0.0"
