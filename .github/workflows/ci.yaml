@@ -3,11 +3,16 @@ on:
   push:
     branches: [dev, main]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Configure insecure registry
         run: |
@@ -36,20 +41,18 @@ jobs:
         run: |
           TAG="${BRANCH}-${SHA:0:7}"
           IMAGE="172.236.254.239:30880/memcore-admin/frontend:${TAG}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           if [ "$BRANCH" = "dev" ]; then
             sed -i "s|image: .*|image: ${IMAGE}|g" k8s/dev/deployment.yaml
-            git config user.email "ci@memcore.ai"
-            git config user.name "CI Bot"
             git add k8s/dev/deployment.yaml
-            git commit -m "ci: update dev image to ${TAG} [skip ci]" || echo "No changes"
-            git push
+            git diff --quiet --cached || git commit -m "ci: update dev image to ${TAG} [skip ci]"
+            git push origin HEAD:dev
           elif [ "$BRANCH" = "main" ]; then
             sed -i "s|image: .*|image: ${IMAGE}|g" k8s/prod/deployment.yaml
-            git config user.email "ci@memcore.ai"
-            git config user.name "CI Bot"
             git add k8s/prod/deployment.yaml
-            git commit -m "ci: update prod image to ${TAG} [skip ci]" || echo "No changes"
-            git push
+            git diff --quiet --cached || git commit -m "ci: update prod image to ${TAG} [skip ci]"
+            git push origin HEAD:main
           fi
 
       - name: Notify Feishu
