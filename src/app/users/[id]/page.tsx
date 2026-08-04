@@ -122,7 +122,7 @@ export default function UserDetailPage() {
                   {[
                     ['套餐', user.plan],
                     ['状态', user.is_banned ? '已封禁' : '正常'],
-                    ['存储用量', formatBytes(user.used_storage)],
+                    ['存储用量', formatBytes(user.used_storage_bytes)],
                     ['注册时间', formatDate(user.created_at)],
                     ['套餐到期', user.plan_expires_at ? formatDate(user.plan_expires_at) : '永久'],
                     ['封禁原因', user.ban_reason || '-'],
@@ -143,7 +143,7 @@ export default function UserDetailPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      {['时间', '旧套餐', '新套餐', '操作员', '原因'].map(h => (
+                      {['时间', '旧套餐', '新套餐', '原因', 'Order ID'].map(h => (
                         <th key={h} className="text-left px-6 py-3 font-medium text-gray-500">{h}</th>
                       ))}
                     </tr>
@@ -153,11 +153,11 @@ export default function UserDetailPage() {
                       <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-400">暂无记录</td></tr>
                     ) : history.map(row => (
                       <tr key={row.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-3">{formatDate(row.created_at)}</td>
-                        <td className="px-6 py-3">{row.old_plan}</td>
-                        <td className="px-6 py-3">{row.new_plan}</td>
-                        <td className="px-6 py-3">{row.operator}</td>
+                        <td className="px-6 py-3">{formatDate(row.effective_at)}</td>
+                        <td className="px-6 py-3">{row.from_plan ?? '-'}</td>
+                        <td className="px-6 py-3">{row.to_plan}</td>
                         <td className="px-6 py-3">{row.reason}</td>
+                        <td className="px-6 py-3 text-xs text-gray-400 font-mono">{row.order_id ?? '-'}</td>
                       </tr>
                     ))}
                   </tbody>

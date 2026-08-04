@@ -78,11 +78,11 @@ export default function AuditPage() {
                     <>
                       <tr key={log.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}>
                         <td className="px-4 py-3 whitespace-nowrap text-gray-500">{formatDate(log.created_at)}</td>
-                        <td className="px-4 py-3 text-gray-700">{log.operator}</td>
+                        <td className="px-4 py-3 text-gray-700 font-mono text-xs truncate max-w-[8rem]">{log.operator_id.slice(0,8)}…</td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-mono">{log.action}</span>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{log.target}</td>
+                        <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{log.target_type}: {log.target_id}</td>
                         <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{log.reason}</td>
                         <td className="px-4 py-3 text-gray-400 font-mono text-xs">{log.ip}</td>
                         <td className="px-4 py-3 text-blue-600 text-xs">
@@ -96,13 +96,13 @@ export default function AuditPage() {
                               <div>
                                 <p className="font-medium text-gray-500 mb-1">Before</p>
                                 <pre className="bg-white border border-gray-200 rounded p-2 text-gray-700 overflow-auto max-h-32">
-                                  {JSON.stringify(log.before, null, 2) || '-'}
+                                  {JSON.stringify(log.before_val, null, 2) || '-'}
                                 </pre>
                               </div>
                               <div>
                                 <p className="font-medium text-gray-500 mb-1">After</p>
                                 <pre className="bg-white border border-gray-200 rounded p-2 text-gray-700 overflow-auto max-h-32">
-                                  {JSON.stringify(log.after, null, 2) || '-'}
+                                  {JSON.stringify(log.after_val, null, 2) || '-'}
                                 </pre>
                               </div>
                             </div>

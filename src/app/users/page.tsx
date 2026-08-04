@@ -62,7 +62,7 @@ export default function UsersPage() {
         ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">已封禁</span>
         : <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">正常</span>,
     }),
-    columnHelper.accessor('used_storage', {
+    columnHelper.accessor('used_storage_bytes', {
       header: '存储用量',
       cell: info => formatBytes(info.getValue()),
     }),

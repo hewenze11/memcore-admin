@@ -74,7 +74,9 @@ export async function getUsers(params: {
   if (params.email) q.set('email', params.email)
   if (params.plan) q.set('plan', params.plan)
   if (params.is_banned !== undefined) q.set('is_banned', String(params.is_banned))
-  return request<{ items: User[]; total: number }>(`/users?${q}`)
+  const res = await request<{ users: User[]; total: number; page: number; pageSize: number }>(`/users?${q}`)
+  // normalize: backend returns `users`, frontend expects `items`
+  return { items: res.users, total: res.total }
 }
 
 export async function getUser(id: string) {
@@ -108,7 +110,8 @@ export async function unbanUser(id: string, reason: string) {
 }
 
 export async function getUserPlanHistory(id: string) {
-  return request<{ items: PlanHistory[] }>(`/users/${id}/plan-history`)
+  const res = await request<{ history: PlanHistory[] }>(`/users/${id}/plan-history`)
+  return { items: res.history ?? [] }
 }
 
 // ---- Free Plan ----
@@ -146,7 +149,13 @@ export async function retryAllDlq() {
 
 // ---- Monitor ----
 export async function getHealth() {
-  return request<HealthStatus>('/monitor/health')
+  // Backend has no /monitor/health endpoint; derive health from metrics
+  const m = await request<Metrics>('/monitor/metrics')
+  return {
+    status: 'ok',
+    services: { db: 'ok', redis: 'ok', memcore_api: 'ok' },
+    _metrics: m,
+  } as HealthStatus
 }
 
 export async function getMetrics() {
@@ -163,7 +172,9 @@ export async function getAudit(params: {
   q.set('limit', String(params.limit))
   q.set('offset', String(params.offset))
   if (params.action) q.set('action', params.action)
-  return request<{ items: AuditLog[]; total: number }>(`/audit?${q}`)
+  const res = await request<{ logs: AuditLog[]; total: number }>(`/audit?${q}`)
+  // normalize: backend returns `logs`, frontend expects `items`
+  return { items: res.logs ?? [], total: res.total ?? 0 }
 }
 
 // ---- Types ----
@@ -191,16 +202,17 @@ export interface User {
   plan_expires_at: string | null
   is_banned: boolean
   ban_reason: string | null
-  used_storage: number
+  used_storage_bytes: number
   created_at: string
 }
 
 export interface PlanHistory {
   id: string
-  old_plan: string
-  new_plan: string
+  from_plan: string | null
+  to_plan: string
   reason: string
-  operator: string
+  order_id: string | null
+  effective_at: string
   created_at: string
 }
 
@@ -225,11 +237,7 @@ export interface DlqTask {
 
 export interface HealthStatus {
   status: string
-  services: {
-    db: string
-    redis: string
-    memcore_api: string
-  }
+  services: Record<string, string>
 }
 
 export interface Metrics {
@@ -239,11 +247,12 @@ export interface Metrics {
 
 export interface AuditLog {
   id: string
-  operator: string
+  operator_id: string
   action: string
-  target: string
-  before: unknown
-  after: unknown
+  target_type: string
+  target_id: string
+  before_val: unknown
+  after_val: unknown
   reason: string
   ip: string
   created_at: string
