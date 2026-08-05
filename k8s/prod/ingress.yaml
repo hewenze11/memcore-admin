@@ -1,0 +1,27 @@
+# Ingress for memcore-admin (prod) - admin.memspider.com
+# TLS: cert-manager (letsencrypt-prod)
+# Note: No Basic Auth on prod admin - relies on app-level auth
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: memspider-admin-prod
+  namespace: memcore
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - admin.memspider.com
+    secretName: memspider-admin-prod-tls
+  rules:
+  - host: admin.memspider.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: memcore-admin
+            port:
+              number: 3000

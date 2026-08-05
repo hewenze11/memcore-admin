@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: memcore-admin
-  namespace: prod-memcore
+  namespace: memcore
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: memcore-admin
@@ -17,7 +17,7 @@ spec:
         - name: harbor-secret
       containers:
         - name: memcore-admin
-          image: 172.236.254.239:30880/memcore-admin/frontend:main-placeholder
+          image: 172.236.254.239:30880/memcore-admin/frontend:main-latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -26,3 +26,24 @@ spec:
               value: production
             - name: HOSTNAME
               value: "0.0.0.0"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memcore-admin
+  namespace: memcore
+spec:
+  selector:
+    app: memcore-admin
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+  type: ClusterIP
