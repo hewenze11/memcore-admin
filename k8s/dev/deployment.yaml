@@ -17,7 +17,7 @@ spec:
         - name: harbor-secret
       containers:
         - name: memcore-admin
-          image: 172.236.254.239:30880/memcore-admin/frontend:dev-4e89722
+          image: 172.236.254.239:30880/memcore-admin/frontend:dev-c4bcd9a
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
