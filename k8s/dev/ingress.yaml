@@ -1,0 +1,41 @@
+# Ingress for memcore-admin (dev) - admin-dev.memspider.com
+# Basic Auth: admin / HeWenZe!@#456
+# TLS: cert-manager (letsencrypt-prod)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: memspider-admin-dev
+  namespace: dev-memcore
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "MemSpider Admin - Login Required"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - admin-dev.memspider.com
+    secretName: memspider-admin-dev-tls
+  rules:
+  - host: admin-dev.memspider.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: memcore-admin
+            port:
+              number: 3000
+---
+# Basic Auth Secret (htpasswd: admin / HeWenZe!@#456)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: basic-auth
+  namespace: dev-memcore
+type: Opaque
+data:
+  # Generated: echo -n "admin:$(openssl passwd -apr1 'HeWenZe!@#456')" | base64
+  auth: YWRtaW46JGFwcjEkL3FQUUJrb3IkbEFhWGN6M2xVdmlLdnZLQVEwTllQLw==
